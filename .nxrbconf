@@ -1,0 +1,14 @@
+[dbus]
+username = "mathew"
+
+[git]
+username = "mathew"
+email = "mathew@nixos"
+commit_on_success = true
+push_on_success = true
+
+[ntfy]
+username = "mathew"
+server = "https://ntfy.lucyverse.top"
+channel = "bSRKRXoU"
+token = "tk_thisisnotarealtoken"
