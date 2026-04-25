@@ -6,6 +6,8 @@ use colored::Colorize;
 use reqwest::blocking::Client;
 
 pub fn exit_sequence(error: &str, args: cli::Args, config: config::Config) -> Result<()> {
+    eprintln!("-- {}", error.red());
+
     let message_title = "❌ Failed to build NixOS";
     let message_body = format!("{}\n{}", config.git.branch, error);
 
