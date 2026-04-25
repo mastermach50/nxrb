@@ -20,6 +20,10 @@ pub struct Args {
     #[arg(short, long)]
     pub notify: bool,
 
+    /// Update the flake before running
+    #[arg(short, long)]
+    pub update: bool,
+
     /// Commit message to use
     #[arg(short, long)]
     pub message: Option<String>

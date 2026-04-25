@@ -8,7 +8,12 @@ description = "A simple NixOS build helper"
 [dependencies]
 anyhow = "1.0.102"
 clap = { version = "4.6.1", features = ["derive"] }
+colored = "3.1.1"
+env_logger = "0.11.10"
+libc = "0.2.186"
+log = "0.4.29"
 rand = "0.10.1"
+reqwest = { version = "0.13.2", features = ["blocking"] }
 serde = { version = "1.0.228", features = ["derive"] }
 toml = "1.1.2"
 whoami = "2.1.1"

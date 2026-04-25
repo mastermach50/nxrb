@@ -1,0 +1,20 @@
+[dbus]
+# the user who should receive dbus notifications
+username = "mathew"
+
+[git]
+# git username and email that should be used for committing
+username = "mathew"
+email = "mathew@nixos"
+commit_on_success = true
+push_on_success = true
+repo = "https://github.com/mastermach50/NixOS-Builds"
+branch = "nixos-ASUS_Vivobook_16X"
+
+[ntfy]
+# ntfy server details for notifications
+username = "mathew"
+server = "https://ntfy.lucyverse.top/main"
+channel = "main"
+token = "tk_m62do18t2jmmaeln0srczk2cuvv5t"
+icon = "https://github.com/NixOS/nixos-artwork/blob/master/bootloader/refind/icons/os_nixos.png?raw=true"
