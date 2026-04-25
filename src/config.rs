@@ -1,5 +1,6 @@
 use std::{fs, io};
 use anyhow::{Context, Result};
+use colored::Colorize;
 use toml;
 use whoami;
 use rand::{self, distr::SampleString};
@@ -45,14 +46,18 @@ pub fn get_config() -> Result<Config> {
         }
         Err(e) if e.kind() == io::ErrorKind::NotFound => {
             println!("Config file not found, creating file at {CONFIG_FILE}");
-            let default_config = write_and_get_default_config()?;
-            return Ok(default_config);
+            write_default_config()?;
+            println!("-- {}", "INFO".blue());
+            println!("-- {} {}", "The default config has been written to".blue(), CONFIG_FILE.bright_magenta());
+            println!("-- {}", "Please edit that file before running the command again".blue());
+
+            std::process::exit(-2);
         }
         Err(e) => {Err(anyhow::anyhow!(e))}
     }
 }
 
-fn write_and_get_default_config() -> Result<Config> {
+fn write_default_config() -> Result<()> {
 
     let default_config_str = format!(r#"[dbus]
 # the user who should receive dbus notifications
@@ -62,10 +67,10 @@ username = "{username}"
 # git username and email that should be used for committing
 username = "{username}"
 email = "{username}@{hostname}"
-repo = "somerepo"
-branch = "somebranch" # different branches can be used for different devices
 commit_on_success = true
 push_on_success = true
+repo = "somerepo"
+branch = "somebranch" # different branches can be used for different devices
 
 [ntfy]
 # ntfy server details for notifications
@@ -79,11 +84,12 @@ icon = "https://raw.githubusercontent.com/NixOS/nixos-artwork/refs/heads/master/
     random_alpha = rand::distr::Alphabetic.sample_string(&mut rand::rng(), 8)
     );
 
-    let default_config = toml::from_str(&default_config_str)
+    // Test if the hardcoded config is valid
+    let _: Config = toml::from_str(&default_config_str)
         .expect("Failed to parse default config");
 
     fs::write(CONFIG_FILE, default_config_str)
         .context("Failed to write default config")?;
 
-    Ok(default_config)
+    Ok(())
 }

@@ -1,6 +1,6 @@
 [package]
 name = "nxrb"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = [ "mastermach50" ]
 description = "A simple NixOS build helper"

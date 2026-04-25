@@ -24,6 +24,9 @@
           version = cargoToml.package.version;
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
+          buildInpute = [
+            pkgs.libnotify
+          ];
         };
       });
     };
