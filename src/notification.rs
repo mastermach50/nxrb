@@ -1,24 +1,8 @@
-use crate::cli;
 use crate::config;
 use std::process::Command;
 use anyhow::{Context, Result};
 use colored::Colorize;
 use reqwest::blocking::Client;
-
-pub fn exit_sequence(error: &str, args: cli::Args, config: config::Config) -> Result<()> {
-    eprintln!("-- {}", error.red());
-
-    let message_title = "❌ Failed to build NixOS";
-    let message_body = format!("{}\n{}", config.git.branch, error);
-
-    send_dbus_notification(config.clone(), message_title, &message_body)?;
-
-    if args.notify {
-        send_ntfy_notification(config, message_title, &message_body);
-    }
-
-    std::process::exit(-1);
-}
 
 pub fn send_dbus_notification(config: config::Config, title: &str, body: &str) -> Result<()> {
     let output = Command::new("id")

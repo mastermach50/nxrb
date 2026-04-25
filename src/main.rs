@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use colored::Colorize;
-use env_logger;
 use std::process::Command;
+use std::time::Duration;
 use std::{env, os::unix::process::CommandExt};
+use ctrlc;
 
 mod cli;
 mod config;
@@ -11,10 +12,11 @@ mod helpers;
 mod notification;
 
 use helpers::execute_cmd;
-use notification::{exit_sequence, send_dbus_notification, send_ntfy_notification};
+use notification::{send_dbus_notification, send_ntfy_notification};
+
+use crate::helpers::print_build_status;
 
 fn main() -> Result<()> {
-    env_logger::init();
     let args = cli::Args::parse();
 
     // Elevate to root if not already running as root
@@ -23,8 +25,13 @@ fn main() -> Result<()> {
     println!("-- {}", "Running as root".green());
 
     let config = config::get_config().context("Could not load config")?;
-
     let start_time = std::time::Instant::now();
+
+    let ctrlc_args = args.clone();
+    let ctrlc_config = config.clone();
+    ctrlc::set_handler(move || {
+        fail_exit_sequence("Encountered SIGINT", start_time.elapsed(), ctrlc_args.clone(), ctrlc_config.clone()).unwrap();
+    })?;
 
     // Flake update
     if args.update {
@@ -38,7 +45,7 @@ fn main() -> Result<()> {
         if status.success() {
             println!("-- {}", "Flake updated successfully".green());
         } else {
-            exit_sequence("Failed to update flake", args.clone(), config.clone())?;
+            fail_exit_sequence("Failed to update flake", start_time.elapsed(), args.clone(), config.clone())?;
         }
     }
 
@@ -54,7 +61,7 @@ fn main() -> Result<()> {
     if status.success() {
         println!("-- {}", "NixOS rebuilt successfully");
     } else {
-        exit_sequence("Failed to rebuild system", args.clone(), config.clone())?;
+        fail_exit_sequence("Failed to rebuild system", start_time.elapsed(), args.clone(), config.clone())?;
     }
 
     // Git commit
@@ -66,7 +73,7 @@ fn main() -> Result<()> {
         }
         let status = execute_cmd(vec!["git", "checkout", "-b", &config.git.branch])?;
         if !status.success() {
-            exit_sequence("Failed to switch to branch", args.clone(), config.clone())?;
+            fail_exit_sequence("Failed to switch to branch", start_time.elapsed(), args.clone(), config.clone())?;
         }
         let status = execute_cmd(vec![
             "git",
@@ -81,7 +88,7 @@ fn main() -> Result<()> {
         if status.success() {
             println!("-- {}", "Files committed successfully".green());
         } else {
-            exit_sequence("Failed to commit files", args.clone(), config.clone())?;
+            fail_exit_sequence("Failed to commit files", start_time.elapsed(), args.clone(), config.clone())?;
         }
     }
 
@@ -98,12 +105,12 @@ fn main() -> Result<()> {
         if status.success() {
             println!("-- {}", "Changes pushed successfully");
         } else {
-            exit_sequence("Failed to push changes", args.clone(), config.clone())?;
+            fail_exit_sequence("Failed to push changes", start_time.elapsed(), args.clone(), config.clone())?;
         }
     }
 
     // Finishing notifications
-    let message_title = "✅ NixOS rebuild completed successfully";
+    let message_title = "✅ NixOS build completed successfully";
     let message_body = format!(
         "{}\nFinished build in {}sec",
         config.git.branch,
@@ -113,6 +120,12 @@ fn main() -> Result<()> {
     if args.notify {
         send_ntfy_notification(config.clone(), message_title, &message_body);
     }
+
+    print_build_status(
+        &"SUCCESS".green(),
+        "NixOS build completed successfully",
+        start_time.elapsed()
+    );
 
     anyhow::Ok(())
 }
@@ -130,4 +143,20 @@ fn elevate_if_needed() -> Result<()> {
     } else {
         Ok(())
     }
+}
+
+pub fn fail_exit_sequence(error: &str, time: Duration, args: cli::Args, config: config::Config) -> Result<()> {
+    eprintln!("-- {}", error.red());
+
+    let message_title = "❌ Failed to build NixOS";
+    let message_body = format!("{}\n{}\n{}", config.git.branch, error, humantime::format_duration(time));
+
+    send_dbus_notification(config.clone(), message_title, &message_body)?;
+    if args.notify {
+        send_ntfy_notification(config, message_title, &message_body);
+    }
+
+    print_build_status(&"ERROR".red(), error, time);
+
+    std::process::exit(-1);
 }
