@@ -71,9 +71,13 @@ fn main() -> Result<()> {
         if let Some(ref msg) = args.message {
             commit_msg.insert(1, msg.clone());
         }
-        let status = execute_cmd(vec!["git", "checkout", "-b", &config.git.branch])?;
+        let status = execute_cmd(vec!["git", "switch", "-C", &config.git.branch])?;
         if !status.success() {
             fail_exit_sequence("Failed to switch to branch", start_time.elapsed(), args.clone(), config.clone())?;
+        }
+        let status = execute_cmd(vec!["git", "add", "-A"])?;
+        if !status.success() {
+            fail_exit_sequence("Failed to stage changes", start_time.elapsed(), args.clone(), config.clone())?;
         }
         let status = execute_cmd(vec![
             "git",
