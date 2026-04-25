@@ -12,13 +12,16 @@ pub fn send_dbus_notification(config: config::Config, title: &str, body: &str) -
     if !output.stderr.is_empty() {
         return Err(anyhow::anyhow!("Failed to get uid from username"));
     } else {
+        let bus = format!("unix:path=/run/user/{}/bus", String::from_utf8(output.stdout)?.trim());
         let output = Command::new("notify-send")
-            .env("DBUS_SESSION_BUS_ADDRESS", &format!("unix:path=/run/user/{}/bus", String::from_utf8(output.stdout).unwrap()))
+            .env("DBUS_SESSION_BUS_ADDRESS", &bus)
             .args([title, body])
             .output()
             .context("Failed to execute notify-send")?;
         if output.status.success() {
             println!("-- {}", "DBUS notification sent".green());
+        } else {
+            eprintln!("-- {}: {}", "Failed to send dbus notification", String::from_utf8(output.stderr).unwrap());
         }
     }
 

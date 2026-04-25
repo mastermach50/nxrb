@@ -122,8 +122,8 @@ fn main() -> Result<()> {
     }
 
     print_build_status(
-        &"SUCCESS".green(),
-        "NixOS build completed successfully",
+        "SUCCESS".green(),
+        "NixOS build completed successfully".green(),
         start_time.elapsed()
     );
 
@@ -156,7 +156,7 @@ pub fn fail_exit_sequence(error: &str, time: Duration, args: cli::Args, config: 
         send_ntfy_notification(config, message_title, &message_body);
     }
 
-    print_build_status(&"ERROR".red(), error, time);
+    print_build_status("ERROR".red(), error.red(), time);
 
     std::process::exit(-1);
 }
