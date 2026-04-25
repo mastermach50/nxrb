@@ -1,5 +1,5 @@
-use std::fs;
-use anyhow::{Context, Ok, Result};
+use std::{fs, io};
+use anyhow::{Context, Result};
 use toml;
 use whoami;
 use rand::{self, distr::SampleString};
@@ -7,18 +7,18 @@ use serde::{Serialize, Deserialize};
 
 static CONFIG_FILE: &str = ".nxrb.toml";
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub dbus: DBus,
     pub git: Git,
     pub ntfy: Ntfy
 }
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct DBus {
     pub username: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Git {
     pub username: String,
     pub email: String,
@@ -28,7 +28,7 @@ pub struct Git {
     pub push_on_success: bool
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Ntfy {
     pub username: String,
     pub server: String,
@@ -38,15 +38,18 @@ pub struct Ntfy {
 }
 
 pub fn get_config() -> Result<Config> {
-    let result = fs::read_to_string(CONFIG_FILE);
-    if result.is_ok() {
-        let config: Config = toml::from_str(&result.unwrap())?;
-        return Ok(config);
-    } else {
-        let default_config = write_and_get_default_config()?;
-        return Ok(default_config);
+    match fs::read_to_string(CONFIG_FILE) {
+        Ok(result) => {
+            let config: Config = toml::from_str(&result)?;
+            return Ok(config);
+        }
+        Err(e) if e.kind() == io::ErrorKind::NotFound => {
+            println!("Config file not found, creating file at {CONFIG_FILE}");
+            let default_config = write_and_get_default_config()?;
+            return Ok(default_config);
+        }
+        Err(e) => {Err(anyhow::anyhow!(e))}
     }
-
 }
 
 fn write_and_get_default_config() -> Result<Config> {
