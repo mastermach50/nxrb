@@ -77,6 +77,14 @@ fn main() -> Result<()> {
         if let Some(ref msg) = args.message {
             commit_msg.insert(1, msg.clone());
         }
+        let status = Command::new("git")
+            .args(["checkout", "-b", &config.git.branch])
+            .status()
+            .context("Failed to execute git")?;
+        if !status.success() {
+            eprintln!("-- {} {}", "Failed to switch to".yellow(), config.git.branch);
+            exit_sequence("Failed to switch to branch", args.clone(), config.clone());
+        }
         let output = Command::new("git")
             .args([
                 "commit",
