@@ -12,7 +12,7 @@
     # flake-parts.url = "github:hercules-ci/flake-parts";
   };
 
-  outputs = { nixpkgs, crane, ... }:
+  outputs = { self, nixpkgs, crane, ... }:
   let
     system = "x86_64-linux";
     pkgs = nixpkgs.legacyPackages.${system};
@@ -20,5 +20,8 @@
   in
   {
     packages.${system}.default = pkgs.callPackage ./package.nix { inherit craneLib; };
+    devShells.${system}.default = pkgs.mkShell {
+      packages = [ self.packages.${system}.default ];
+    };
   };
 }

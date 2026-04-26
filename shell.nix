@@ -11,6 +11,8 @@ pkgs.mkShell {
     rustfmt
     rust-analyzer
     pkg-config
+
+    cachix
   ];
 
   RUST_BACKTRACE = 1;
