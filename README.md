@@ -1,4 +1,4 @@
-> AI written README, i'll write a proper one later
+> AI written README, i'll write a proper one later, (human made code btw)
 
 # nxrb
 
